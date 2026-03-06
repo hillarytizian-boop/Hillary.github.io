@@ -1,14 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tizian Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="style.css">
+<style>
+body{font-family:Arial;background:#f4f6fb;margin:0;}
+header{background:#111827;color:white;padding:15px;text-align:center;}
+.container{padding:30px;max-width:1000px;margin:auto;}
+.card{background:white;padding:20px;margin-bottom:20px;border-radius:8px;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+input,textarea,select{width:100%;padding:10px;margin-top:10px;}
+button{background:#2563eb;color:white;padding:10px;border:none;margin-top:10px;cursor:pointer;}
+button:hover{opacity:0.9;}
+.post{padding:10px;border-bottom:1px solid #eee;}
+.admin{background:#111827;color:white;padding:10px;border-radius:6px;margin-top:10px;}
+.dropzone{border:2px dashed #2563eb;padding:20px;text-align:center;color:#2563eb;margin-top:10px;border-radius:6px;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<header><h1>Tizian Social Media Dashboard</h1></header>
+
+<header><h1>Tizian Dashboard</h1></header>
 <div class="container">
 
+<!-- Create Post -->
 <div class="card">
 <h2>Create Post</h2>
 <textarea id="text" placeholder="Write your post"></textarea>
@@ -17,15 +32,19 @@
 <option>WhatsApp</option>
 </select>
 <input type="datetime-local" id="time">
+<div class="dropzone" id="dropzone">Drag & Drop Media Here or Click to Upload</div>
+<p id="mediaName"></p>
 <button onclick="schedulePost()">Schedule</button>
 <p id="status"></p>
 </div>
 
+<!-- Scheduled Posts -->
 <div class="card">
 <h2>Scheduled Posts</h2>
 <div id="posts"></div>
 </div>
 
+<!-- AI Caption Generator -->
 <div class="card">
 <h2>AI Caption Generator</h2>
 <input id="topic" placeholder="Topic">
@@ -33,22 +52,117 @@
 <p id="captionResult"></p>
 </div>
 
+<!-- Analytics -->
 <div class="card">
 <h2>Audience Analytics</h2>
 <canvas id="chart"></canvas>
 </div>
 
+<!-- Best Posting Time -->
 <div class="card">
 <h2>Best Posting Time</h2>
 <button onclick="bestTime()">Analyze</button>
 <p id="best"></p>
 </div>
 
+<!-- Admin Panel -->
 <div class="card">
 <h2>Admin Panel</h2>
 <div id="adminPosts"></div>
 </div>
 
-<script src="script.js"></script>
+<script>
+// Local Storage Database
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+let uploadedMedia = null;
+function save(){localStorage.setItem("posts",JSON.stringify(posts));render();renderAdmin();}
+
+// Dropzone for media upload simulation
+const dropzone = document.getElementById("dropzone");
+dropzone.addEventListener("click", ()=>{let f=document.createElement("input");f.type="file";f.onchange=e=>{uploadedMedia=e.target.files[0];document.getElementById("mediaName").innerText=uploadedMedia.name;};f.click();});
+dropzone.addEventListener("dragover", e=>{e.preventDefault();dropzone.style.background="#e0e7ff";});
+dropzone.addEventListener("dragleave", e=>{dropzone.style.background="";});
+dropzone.addEventListener("drop", e=>{e.preventDefault();uploadedMedia=e.dataTransfer.files[0];document.getElementById("mediaName").innerText=uploadedMedia.name;dropzone.style.background="";});
+
+// Schedule Post
+function schedulePost(){
+  let text = document.getElementById("text").value;
+  let time = document.getElementById("time").value;
+  let platform = document.getElementById("platform").value;
+  if(text===""){document.getElementById("status").innerText="Post cannot be empty";return;}
+  posts.push({text,time,platform,status:"Scheduled",media:uploadedMedia?uploadedMedia.name:null});
+  document.getElementById("status").innerText="Post scheduled!";
+  document.getElementById("text").value=""; document.getElementById("time").value=""; uploadedMedia=null; document.getElementById("mediaName").innerText="";
+  save();
+}
+
+// Render Posts
+function render(){
+  let html="";
+  posts.forEach((p,i)=>{
+    html+=`<div class="post"><b>${p.platform}</b><br>${p.text}<br>${p.media?("Media: "+p.media+"<br>"):""}<small>${p.time}</small><br><small>Status: ${p.status}</small></div>`;
+  });
+  document.getElementById("posts").innerHTML=html;
+}
+
+// Admin Panel
+function renderAdmin(){
+  if(!document.getElementById("adminPosts")) return;
+  let html="<div class='admin'><b>All Posts:</b><br>";
+  posts.forEach((p,i)=>{
+    html+=`<div><b>${p.platform}</b> | ${p.text} | ${p.media?("Media: "+p.media+" | "):""}${p.time} | Status: ${p.status} 
+    <button onclick="deletePost(${i})">Delete</button></div>`;
+  });
+  html+="</div>";
+  document.getElementById("adminPosts").innerHTML=html;
+}
+function deletePost(index){posts.splice(index,1);save();}
+
+// Simulated Auto Posting
+setInterval(()=>{
+  let now = new Date();
+  posts.forEach(p=>{
+    if(p.status==="Scheduled" && new Date(p.time)<=now){
+      p.status="Published";
+      console.log("Simulated Post on "+p.platform+":",p.text,p.media?p.media:"No Media");
+      save();
+    }
+  });
+},5000);
+
+// AI Caption Generator
+function caption(){
+  let topic=document.getElementById("topic").value;
+  let captions=[
+    "🔥 "+topic+" is trending right now!",
+    "Everyone is talking about "+topic,
+    "Don't miss this "+topic+" moment",
+    topic+" content going viral",
+    "Next level "+topic+" post"
+  ];
+  let random=captions[Math.floor(Math.random()*captions.length)];
+  document.getElementById("captionResult").innerText=random;
+}
+
+// Analytics Chart
+new Chart(document.getElementById("chart"),{
+  type:'bar',
+  data:{
+    labels:["6AM","9AM","12PM","3PM","6PM","9PM"],
+    datasets:[{label:"Users Online",data:[20,40,30,50,90,120],backgroundColor:'#2563eb'}]
+  }
+});
+
+// Best Posting Time
+function bestTime(){
+  let times=["6PM","7PM","8PM","9PM"];
+  let r=times[Math.floor(Math.random()*times.length)];
+  document.getElementById("best").innerText="Best time: "+r;
+}
+
+// Initial Render
+render();renderAdmin();
+</script>
+
 </body>
 </html>
