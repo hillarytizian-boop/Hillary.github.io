@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tizian</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6fb;
+margin:0;
+}
+
+header{
+background:#111827;
+color:white;
+padding:15px;
+text-align:center;
+}
+
+.container{
+padding:30px;
+max-width:1000px;
+margin:auto;
+}
+
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:8px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+input,textarea,select{
+width:100%;
+padding:10px;
+margin-top:10px;
+}
+
+button{
+background:#2563eb;
+color:white;
+padding:10px;
+border:none;
+margin-top:10px;
+cursor:pointer;
+}
+
+.post{
+padding:10px;
+border-bottom:1px solid #eee;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+<h1>Tizian Social Media Automation</h1>
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<h2>Create Post</h2>
+
+<textarea id="text" placeholder="Write your post"></textarea>
+
+<select id="platform">
+<option>TikTok</option>
+<option>WhatsApp</option>
+</select>
+
+<input type="datetime-local" id="time">
+
+<button onclick="schedulePost()">Schedule</button>
+
+</div>
+
+
+<div class="card">
+
+<h2>Scheduled Posts</h2>
+
+<div id="posts"></div>
+
+</div>
+
+
+<div class="card">
+
+<h2>AI Caption Generator</h2>
+
+<input id="topic" placeholder="Topic">
+
+<button onclick="caption()">Generate</button>
+
+<p id="captionResult"></p>
+
+</div>
+
+
+<div class="card">
+
+<h2>Audience Analytics</h2>
+
+<canvas id="chart"></canvas>
+
+</div>
+
+
+<div class="card">
+
+<h2>Best Posting Time</h2>
+
+<button onclick="bestTime()">Analyze</button>
+
+<p id="best"></p>
+
+</div>
+
+
+<div class="card">
+
+<h2>Upgrade</h2>
+
+<div id="paypal-button-container"></div>
+
+</div>
+
+</div>
+
+<script>
+
+/* DATABASE */
+
+let posts = JSON.parse(localStorage.getItem("posts")) || []
+
+function save(){
+
+localStorage.setItem("posts",JSON.stringify(posts))
+
+}
+
+
+/* SCHEDULE POST */
+
+function schedulePost(){
+
+let text=document.getElementById("text").value
+let time=document.getElementById("time").value
+let platform=document.getElementById("platform").value
+
+if(text==="") return
+
+posts.push({text,time,platform})
+
+save()
+
+render()
+
+}
+
+
+
+/* RENDER POSTS */
+
+function render(){
+
+let html=""
+
+posts.forEach(p=>{
+
+html+=`
+
+<div class="post">
+
+<b>${p.platform}</b><br>
+${p.text}<br>
+<small>${p.time}</small>
+
+</div>
+
+`
+
+})
+
+document.getElementById("posts").innerHTML=html
+
+}
+
+render()
+
+
+
+/* CAPTION AI */
+
+function caption(){
+
+let topic=document.getElementById("topic").value
+
+let captions=[
+
+"🔥 "+topic+" is trending right now!",
+"Everyone talking about "+topic,
+"Don't miss this "+topic+" moment",
+topic+" content going viral",
+"Next level "+topic+" post"
+
+]
+
+let random=captions[Math.floor(Math.random()*captions.length)]
+
+document.getElementById("captionResult").innerText=random
+
+}
+
+
+
+/* ANALYTICS */
+
+let chart=new Chart(document.getElementById("chart"),{
+
+type:'bar',
+
+data:{
+
+labels:["6AM","9AM","12PM","3PM","6PM","9PM"],
+
+datasets:[{
+
+label:"Users Online",
+
+data:[20,40,30,50,90,120]
+
+}]
+
+}
+
+})
+
+
+
+/* BEST TIME */
+
+function bestTime(){
+
+let times=["6PM","7PM","8PM","9PM"]
+
+let r=times[Math.floor(Math.random()*times.length)]
+
+document.getElementById("best").innerText="Best time: "+r
+
+}
+
+</script>
+
+
+<script src="https://www.paypal.com/sdk/js?client-id=sb"></script>
+
+<script>
+
+paypal.Buttons({
+
+createOrder:function(data,actions){
+
+return actions.order.create({
+
+purchase_units:[{
+
+amount:{value:'10.00'}
+
+}]
+
+})
+
+},
+
+onApprove:function(data,actions){
+
+return actions.order.capture().then(function(details){
+
+alert("Payment completed")
+
+})
+
+}
+
+}).render('#paypal-button-container')
+
+</script>
+
+</body>
+</html>
